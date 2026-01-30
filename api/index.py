@@ -10,7 +10,6 @@ HEADERS = {
 }
 
 # --- TEMPLATE HTML (FRONTEND) ---
-# Kita simpan HTML langsung di variabel Python agar jadi 1 file saja.
 
 LAYOUT_TEMPLATE = """
 <!DOCTYPE html>
@@ -23,11 +22,14 @@ LAYOUT_TEMPLATE = """
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <style>
         body { background-color: #0f172a; color: #e2e8f0; font-family: sans-serif; }
-        .glass { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(10px); }
+        .glass { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); }
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .custom-scroll::-webkit-scrollbar { width: 6px; }
         .custom-scroll::-webkit-scrollbar-track { background: #1e293b; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 3px; }
+        /* Animasi loading gambar */
+        .img-loading { background-color: #1e293b; animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -39,7 +41,7 @@ LAYOUT_TEMPLATE = """
             
             <form action="/search" method="get" class="flex items-center">
                 <div class="relative">
-                    <input type="text" name="q" placeholder="Cari drama..." value="{{ query if query else '' }}"
+                    <input type="text" name="q" placeholder="Cari judul..." value="{{ query if query else '' }}"
                            class="bg-slate-800 text-white pl-4 pr-10 py-1.5 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 border border-slate-600 transition w-32 md:w-64">
                     <button type="submit" class="absolute right-0 top-0 h-full px-3 text-slate-400 hover:text-cyan-400">
                         🔍
@@ -65,13 +67,15 @@ HOME_TEMPLATE = """
 {% block content %}
 
 {% if content.drama_populer and content.drama_populer|length > 0 %}
-<div class="relative w-full h-64 md:h-[28rem] rounded-2xl overflow-hidden shadow-2xl shadow-cyan-900/20 mb-10 group border border-slate-700">
+<div class="relative w-full h-64 md:h-[30rem] rounded-2xl overflow-hidden shadow-2xl shadow-cyan-900/20 mb-10 group border border-slate-700">
     {% set hero = content.drama_populer[0] %}
-    <img src="{{ hero.image if hero.image else 'https://via.placeholder.com/800x400?text=ALBEDODUST+TV' }}" 
-         class="w-full h-full object-cover opacity-70 group-hover:scale-105 transition duration-1000">
+    <img src="/cover/{{ hero.vid }}" 
+         class="w-full h-full object-cover opacity-60 group-hover:scale-105 transition duration-1000 img-loading"
+         onload="this.classList.remove('img-loading')">
+    
     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent flex items-end p-6 md:p-10">
-        <div class="max-w-2xl">
-            <span class="bg-cyan-600 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded mb-3 inline-block tracking-widest">TRENDING #1</span>
+        <div class="max-w-2xl relative z-10">
+            <span class="bg-cyan-600 text-white text-[10px] md:text-xs font-bold px-2 py-1 rounded mb-3 inline-block tracking-widest uppercase">Paling Populer</span>
             <h1 class="text-3xl md:text-6xl font-black text-white mb-4 leading-tight drop-shadow-lg">{{ hero.title }}</h1>
             <a href="/drama/{{ hero.vid }}" class="inline-flex items-center bg-cyan-500 hover:bg-cyan-400 text-slate-900 px-6 py-2.5 rounded-full font-bold transition shadow-lg shadow-cyan-500/40 hover:shadow-cyan-400/60 transform hover:-translate-y-1">
                 ▶ Mulai Nonton
@@ -86,26 +90,23 @@ HOME_TEMPLATE = """
     {% for item in items %}
     <a href="/drama/{{ item.vid }}" class="group relative block bg-slate-800 rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-{{ color_theme }}-500/10 border border-slate-700/50 hover:border-{{ color_theme }}-500/50">
         <div class="aspect-[3/4] bg-slate-800 relative overflow-hidden">
-            {% if item.image %}
-                <img src="{{ item.image }}" alt="{{ item.title }}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
-            {% else %}
-                <div class="w-full h-full flex flex-col items-center justify-center text-slate-600 p-4 text-center bg-slate-900">
-                    <span class="text-2xl mb-2">🎬</span>
-                    <span class="text-xs">No Image</span>
-                </div>
-            {% endif %}
+            <img src="{{ item.image if item.image else '/cover/' + item.vid }}" 
+                 alt="{{ item.title }}" 
+                 class="w-full h-full object-cover group-hover:scale-110 transition duration-500 img-loading"
+                 loading="lazy"
+                 onload="this.classList.remove('img-loading')">
             
             {% if badge_text %}
-            <div class="absolute top-2 right-2">
-                <span class="bg-{{ color_theme }}-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow">{{ badge_text }}</span>
+            <div class="absolute top-2 right-2 z-10">
+                <span class="bg-{{ color_theme }}-600 text-[10px] font-bold px-2 py-0.5 rounded text-white shadow backdrop-blur-md bg-opacity-80">{{ badge_text }}</span>
             </div>
             {% endif %}
 
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center backdrop-blur-[1px]">
-                <div class="w-10 h-10 bg-{{ color_theme }}-500 rounded-full flex items-center justify-center shadow-lg text-white pl-1">▶</div>
+                <div class="w-12 h-12 bg-{{ color_theme }}-500 rounded-full flex items-center justify-center shadow-lg text-white pl-1 scale-0 group-hover:scale-100 transition-transform duration-300">▶</div>
             </div>
         </div>
-        <div class="p-3">
+        <div class="p-3 bg-slate-800">
             <h3 class="text-sm font-semibold text-slate-200 line-clamp-1 group-hover:text-{{ color_theme }}-400 transition">{{ item.title }}</h3>
         </div>
     </a>
@@ -160,7 +161,7 @@ SEARCH_TEMPLATE = """
     {% for item in results %}
     <a href="/drama/{{ item.id }}" class="group block bg-slate-800 rounded-xl overflow-hidden hover:scale-105 transition duration-300 border border-slate-700 hover:border-cyan-500 shadow-lg hover:shadow-cyan-900/30">
         <div class="aspect-[3/4] relative">
-            <img src="{{ item.cover_path }}" alt="{{ item.english_name }}" class="w-full h-full object-cover">
+            <img src="{{ item.cover_path }}" alt="{{ item.english_name }}" class="w-full h-full object-cover img-loading" onload="this.classList.remove('img-loading')">
             <div class="absolute top-2 right-2 bg-slate-900/80 backdrop-blur text-cyan-400 text-[10px] font-bold px-2 py-1 rounded border border-cyan-500/30">
                 {{ item.episode_total }} EPS
             </div>
@@ -234,7 +235,7 @@ WATCH_TEMPLATE = """
             {% endif %}
 
             <div class="text-center">
-                <h2 class="text-cyan-400 font-bold text-lg tracking-wide">{{ video.name }}</h2>
+                <h2 class="text-cyan-400 font-bold text-lg tracking-wide line-clamp-1 px-2">{{ video.name }}</h2>
             </div>
 
             {% if next_ep %}
@@ -325,25 +326,10 @@ def get_json(url):
         response = requests.get(url, headers=HEADERS, timeout=10)
         return response.json()
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error fetching {url}: {e}")
         return None
 
-# Helper untuk menggabungkan Layout dengan Page Template
-def render_page(template_body, **context):
-    # Kita mendaftarkan template 'layout' secara manual ke Jinja env sementara
-    # Namun karena render_template_string tidak punya loader, kita pakai teknik replace sederhana 
-    # atau kita define dict template jika pakai Environment.
-    # Cara paling simpel untuk single file tanpa class loader:
-    
-    # Gabungkan string layout dan body manual untuk inheritance simpel
-    # Tapi Jinja 'extends' butuh loader. 
-    # Kita akan pakai cara: app.jinja_env.from_string(LAYOUT_TEMPLATE)
-    
-    # Agar {% extends "layout" %} jalan di single file string, kita perlu trick sedikit:
-    # Kita override loader Flask.
-    return render_template_string(template_body, **context)
-
-# Setup Jinja Loader agar bisa baca string variable sebagai file template
+# Setup Jinja Loader
 from jinja2 import DictLoader
 app.jinja_env.loader = DictLoader({
     'layout': LAYOUT_TEMPLATE,
@@ -352,12 +338,35 @@ app.jinja_env.loader = DictLoader({
     'watch': WATCH_TEMPLATE
 })
 
+# --- ROUTES ---
+
 @app.route('/')
 def index():
+    # Ambil data home yang (sayangnya) gambarnya kosong
     data = get_json(f"{API_BASE}/home")
     if data and data.get('status'):
         return render_template_string(HOME_TEMPLATE, content=data['data'])
     return "Gagal memuat API Home", 500
+
+# [NEW] ROUTE KHUSUS UNTUK PROXY GAMBAR
+@app.route('/cover/<vid>')
+def get_cover_image(vid):
+    # 1. Tembak API Episode/Detail pakai ID (vid)
+    url = f"{API_BASE}/episodes/{vid}"
+    data = get_json(url)
+    
+    # 2. Ambil cover_path yang ASLI
+    if data and data.get('status') and 'video_info' in data.get('data', {}):
+        cover_url = data['data']['video_info'].get('cover_path')
+        if cover_url:
+            # 3. Redirect browser ke gambar asli
+            # Cache control penting biar gak nembak api terus menerus
+            response = redirect(cover_url)
+            response.headers['Cache-Control'] = 'public, max-age=3600' # Cache 1 jam
+            return response
+            
+    # Fallback jika gagal
+    return redirect("https://via.placeholder.com/300x400?text=No+Cover")
 
 @app.route('/search')
 def search():
@@ -383,7 +392,6 @@ def search():
 
 @app.route('/drama/<vid>')
 def detail(vid):
-    # Redirect ke episode 1
     data = get_json(f"{API_BASE}/episodes/{vid}")
     if data and data.get('status') and data['data']['list']:
         first_ep_id = data['data']['list'][0]['id']
@@ -402,7 +410,6 @@ def watch(vid, epid):
         prev_ep = None
         next_ep = None
         
-        # Cari episode logic
         for i, ep in enumerate(episodes):
             if ep['id'] == epid:
                 current_ep = ep
@@ -422,6 +429,5 @@ def watch(vid, epid):
     
     return "Error memuat player", 404
 
-# Entry point Vercel
 if __name__ == '__main__':
     app.run(debug=True)
