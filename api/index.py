@@ -56,7 +56,7 @@ LAYOUT_TEMPLATE = """
     </main>
 
     <footer class="bg-slate-900/50 text-center py-8 border-t border-slate-800 text-slate-500 text-sm mt-auto">
-        <p>&copy; 2026 ALBEDODUST-TV. <span class="text-cyan-600">Streaming Engine by Python.</span></p>
+        <p>&copy; 2026 ALBEDODUST-TV. <span class="text-cyan-600">FREE VIP ACCESS</span></p>
     </footer>
 </body>
 </html>
